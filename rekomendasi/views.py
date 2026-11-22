@@ -2,7 +2,8 @@ from django.db import connection
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from .models import Laptop
-from .services_topsis import KEBUTUHAN_CLUSTER_MAP, hitung_topsis_dinamis
+from .services_topsis import KEBUTUHAN_CLUSTER_MAP, hitung_topsis_dinamis, get_laptop_image_url
+
 
 @require_GET
 def api_rekomendasi_laptop(request):
@@ -72,15 +73,18 @@ def api_best_per_cluster(request):
     hasil = {}
     for label in ['Rendah', 'Menengah', 'Tinggi']:
         top_laptop = Laptop.objects.filter(cluster_label=label).order_by('-preference_value').values(
-            'id', 'brand', 'model_name', 'price_idr', 'cpu', 'gpu', 'ram_gb',
+            'id', 'brand', 'model_name', 'category', 'price_idr', 'cpu', 'gpu', 'ram_gb',
             'storage_gb', 'cluster_label', 'preference_value', 'ranking'
         ).first()
+        if top_laptop:
+            top_laptop['image_url'] = get_laptop_image_url(top_laptop['brand'], top_laptop['category'])
         hasil[label] = top_laptop
 
     return JsonResponse({
         'status': 'success',
         'best_per_cluster': hasil
     })
+
 
 @require_GET
 def api_filter_options(request):

@@ -13,6 +13,23 @@ PRIORITAS_WEIGHTS = {
     'hemat':    {'price_idr': 0.45, 'cpu_score': 0.20, 'gpu_score': 0.10, 'ram_gb': 0.15, 'storage_gb': 0.10},
 }
 
+CATEGORY_IMAGE_MAP = {
+    'Gaming': 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=600&q=80',
+    'Ultrabook': 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=80',
+    '2 in 1 Convertible': 'https://images.unsplash.com/photo-1544731612-de7f96afe55f?w=600&q=80',
+    'Workstation': 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=600&q=80',
+    'Netbook': 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=600&q=80',
+    'Notebook': 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=600&q=80',
+}
+APPLE_IMAGE_URL = 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&q=80'
+
+
+def get_laptop_image_url(brand, category):
+    if str(brand).strip().lower() == 'apple':
+        return APPLE_IMAGE_URL
+    return CATEGORY_IMAGE_MAP.get(category, CATEGORY_IMAGE_MAP['Notebook'])
+
+
 def hitung_topsis_dinamis(queryset, prioritas='seimbang', top_n=10):
     data = list(queryset.values(
         'id', 'brand', 'model_name', 'category', 'screen_size', 'cpu',
@@ -28,6 +45,7 @@ def hitung_topsis_dinamis(queryset, prioritas='seimbang', top_n=10):
     if len(df) == 1:
         df['dynamic_score'] = 1.0
         df['dynamic_rank'] = 1
+        df['image_url'] = df.apply(lambda r: get_laptop_image_url(r['brand'], r['category']), axis=1)
         return df.to_dict(orient='records')
 
     weights = PRIORITAS_WEIGHTS.get(prioritas, PRIORITAS_WEIGHTS['seimbang'])
@@ -66,4 +84,9 @@ def hitung_topsis_dinamis(queryset, prioritas='seimbang', top_n=10):
     df = df.sort_values(by='dynamic_score', ascending=False).reset_index(drop=True)
     df['dynamic_rank'] = df.index + 1
 
-    return df.head(top_n).to_dict(orient='records')
+    hasil_top = df.head(top_n).copy()
+    hasil_top['image_url'] = hasil_top.apply(
+        lambda r: get_laptop_image_url(r['brand'], r['category']), axis=1
+    )
+
+    return hasil_top.to_dict(orient='records')
