@@ -1,92 +1,84 @@
 import numpy as np
-import pandas as pd
 
 KEBUTUHAN_CLUSTER_MAP = {
-    'ringan': 'Rendah',       # Tugas kuliah, MS Office, Browsing
-    'menengah': 'Menengah',   # Programming / Pemrograman
-    'berat': 'Tinggi',        # Gaming, Data Science / AI, Desain Grafis
+    'K01': 'Rendah',
+    'K02': 'Menengah',
+    'K03': 'Tinggi',
+    'K04': 'Tinggi',
 }
 
-PRIORITAS_WEIGHTS = {
-    'seimbang': {'price_idr': 0.30, 'cpu_score': 0.25, 'gpu_score': 0.20, 'ram_gb': 0.15, 'storage_gb': 0.10},
-    'performa': {'price_idr': 0.15, 'cpu_score': 0.30, 'gpu_score': 0.25, 'ram_gb': 0.15, 'storage_gb': 0.15},
-    'hemat':    {'price_idr': 0.45, 'cpu_score': 0.20, 'gpu_score': 0.10, 'ram_gb': 0.15, 'storage_gb': 0.10},
+BOBOT_PRIORITAS = {
+    'seimbang': np.array([0.30, 0.25, 0.15, 0.10, 0.20]),
+    'performa': np.array([0.15, 0.30, 0.20, 0.10, 0.25]),
+    'hemat':    np.array([0.45, 0.20, 0.15, 0.10, 0.10]),
 }
 
-CATEGORY_IMAGE_MAP = {
-    'Gaming': 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=600&q=80',
-    'Ultrabook': 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=80',
-    '2 in 1 Convertible': 'https://images.unsplash.com/photo-1544731612-de7f96afe55f?w=600&q=80',
-    'Workstation': 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=600&q=80',
-    'Netbook': 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=600&q=80',
-    'Notebook': 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=600&q=80',
-}
-APPLE_IMAGE_URL = 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=600&q=80'
+
+def get_laptop_image_url(brand: str, category: str) -> str:
+    b = str(brand).lower()
+    c = str(category).lower()
+    if 'apple' in b:
+        return 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&q=80'
+    if 'gaming' in c or any(k in b for k in ['msi', 'alienware', 'razer', 'gigabyte']):
+        return 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800&q=80'
+    if 'ultrabook' in c or any(k in b for k in ['lg', 'dell', 'microsoft']):
+        return 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80'
+    return 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=800&q=80'
 
 
-def get_laptop_image_url(brand, category):
-    if str(brand).strip().lower() == 'apple':
-        return APPLE_IMAGE_URL
-    return CATEGORY_IMAGE_MAP.get(category, CATEGORY_IMAGE_MAP['Notebook'])
-
-
-def hitung_topsis_dinamis(queryset, prioritas='seimbang', top_n=10):
-    data = list(queryset.values(
-        'id', 'brand', 'model_name', 'category', 'screen_size', 'cpu',
-        'ram_gb', 'storage_gb', 'storage_type', 'gpu', 'weight_kg',
-        'price_idr', 'cpu_score', 'gpu_score', 'cluster_label', 'preference_value', 'ranking'
-    ))
-
-    if not data:
+def hitung_topsis_dinamis(queryset, prioritas='seimbang', top_n=12):
+    laptops = list(queryset)
+    if not laptops:
         return []
 
-    df = pd.DataFrame(data)
+    weights = BOBOT_PRIORITAS.get(prioritas, BOBOT_PRIORITAS['seimbang'])
+    is_benefit = np.array([False, True, True, True, True])
 
-    if len(df) == 1:
-        df['dynamic_score'] = 1.0
-        df['dynamic_rank'] = 1
-        df['image_url'] = df.apply(lambda r: get_laptop_image_url(r['brand'], r['category']), axis=1)
-        return df.to_dict(orient='records')
+    matrix = np.array([
+        [l.price_idr, l.cpu_score, l.ram_gb, l.storage_gb, l.gpu_score]
+        for l in laptops
+    ], dtype=float)
 
-    weights = PRIORITAS_WEIGHTS.get(prioritas, PRIORITAS_WEIGHTS['seimbang'])
-    criteria = ['price_idr', 'cpu_score', 'gpu_score', 'ram_gb', 'storage_gb']
-    matrix = df[criteria].astype(float).values
-
-    # 1. Normalisasi Vektor
     denom = np.sqrt((matrix ** 2).sum(axis=0))
-    denom[denom == 0] = 1
+    denom[denom == 0] = 1.0
     norm_matrix = matrix / denom
+    weighted = norm_matrix * weights
 
-    # 2. Normalisasi Terbobot
-    w_array = np.array([weights[c] for c in criteria])
-    weighted_matrix = norm_matrix * w_array
+    ideal_pos = np.where(is_benefit, weighted.max(axis=0), weighted.min(axis=0))
+    ideal_neg = np.where(is_benefit, weighted.min(axis=0), weighted.max(axis=0))
 
-    # 3. Solusi Ideal Positif (A+) & Negatif (A-)
-    ideal_pos = np.zeros(len(criteria))
-    ideal_neg = np.zeros(len(criteria))
+    d_pos = np.sqrt(((weighted - ideal_pos) ** 2).sum(axis=1))
+    d_neg = np.sqrt(((weighted - ideal_neg) ** 2).sum(axis=1))
+    total_d = d_pos + d_neg
+    total_d[total_d == 0] = 1.0
+    scores = d_neg / total_d
 
-    ideal_pos[0] = weighted_matrix[:, 0].min()  # Price = Cost
-    ideal_neg[0] = weighted_matrix[:, 0].max()
+    indexed = sorted(zip(laptops, scores), key=lambda x: x[1], reverse=True)[:top_n]
 
-    for i in range(1, len(criteria)):
-        ideal_pos[i] = weighted_matrix[:, i].max()  # Spek = Benefit
-        ideal_neg[i] = weighted_matrix[:, i].min()
-
-    # 4. Jarak Euclidean & Nilai Preferensi
-    d_plus = np.sqrt(((weighted_matrix - ideal_pos) ** 2).sum(axis=1))
-    d_minus = np.sqrt(((weighted_matrix - ideal_neg) ** 2).sum(axis=1))
-
-    total_d = d_plus + d_minus
-    total_d[total_d == 0] = 1
-    v_score = d_minus / total_d
-
-    df['dynamic_score'] = np.round(v_score, 4)
-    df = df.sort_values(by='dynamic_score', ascending=False).reset_index(drop=True)
-    df['dynamic_rank'] = df.index + 1
-
-    hasil_top = df.head(top_n).copy()
-    hasil_top['image_url'] = hasil_top.apply(
-        lambda r: get_laptop_image_url(r['brand'], r['category']), axis=1
-    )
-
-    return hasil_top.to_dict(orient='records')
+    hasil = []
+    for rank, (l, score) in enumerate(indexed, start=1):
+        hasil.append({
+            'id': l.id,
+            'full_name': l.full_name,
+            'status': l.status,
+            'brand': l.brand,
+            'model_name': l.model_name,
+            'category': l.category,
+            'screen_size': l.screen_size,
+            'touchscreen': l.touchscreen,
+            'cpu': l.cpu,
+            'ram_gb': l.ram_gb,
+            'storage_gb': l.storage_gb,
+            'storage_type': l.storage_type,
+            'gpu': l.gpu,
+            'price_idr': l.price_idr,
+            'cpu_score': l.cpu_score,
+            'gpu_score': l.gpu_score,
+            'cluster_label': l.cluster_label,
+            'preference_value': l.preference_value,
+            'ranking': l.ranking,
+            'dynamic_score': round(float(score), 4),
+            'dynamic_rank': rank,
+            'image_url': get_laptop_image_url(l.brand, l.category),
+        })
+    return hasil

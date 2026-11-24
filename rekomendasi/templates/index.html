@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+{% block title %}LaptopKu — Pemilihan Laptop Mahasiswa Berbasis Data{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* BAND 1: EDITORIAL DARK HERO WITH AMBIENT RIGHT BACKDROP */
+  .hero-editorial {
+    position: relative;
+    min-height: 100vh;
+    background: var(--black);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    padding: 120px 0 72px;
+    border-bottom: 1px solid var(--border-dark);
+    overflow: hidden;
+  }
+
+  /* Gambar laptop transparan di latar belakang sisi kanan */
+  .hero-backdrop {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 68%;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .hero-backdrop img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center right;
+    opacity: 0.42;
+    filter: grayscale(35%) contrast(1.08);
+    display: block;
+  }
+  /* Gradasi menyatu sempurna ke hitam di sisi kiri, atas, dan bawah */
+  .hero-backdrop::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, var(--black) 0%, rgba(11, 13, 18, 0.88) 32%, rgba(11, 13, 18, 0.25) 75%, rgba(11, 13, 18, 0.55) 100%),
+      linear-gradient(180deg, rgba(11, 13, 18, 0.7) 0%, transparent 25%, transparent 72%, var(--black) 100%);
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 640px;
+  }
+  .hero-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--muted-light);
+    margin-bottom: 18px;
+  }
+  .hero-kicker .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #60a5fa;
+  }
+  .hero-editorial h1 {
+    font-size: clamp(2.4rem, 4.5vw, 3.85rem);
+    line-height: 1.06;
+    letter-spacing: -0.035em;
+    font-weight: 700;
+    margin-bottom: 22px;
+  }
+  .hero-editorial p {
+    color: #cbd5e1;
+    font-size: 1.06rem;
+    max-width: 520px;
+    margin-bottom: 34px;
+  }
+  .hero-cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 48px;
+  }
+  .hero-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-dark);
+  }
+  .metric-val {
+    font-size: 1.45rem;
+    font-weight: 600;
+    color: var(--white);
+  }
+  .metric-lbl {
+    font-size: 0.78rem;
+    color: var(--muted-light);
+    margin-top: 2px;
+  }
+
+  /* BAND 2: CONTRAST MATRIX */
+  .matrix-band {
+    padding: 96px 0;
+    background: var(--stone);
+    border-bottom: 1px solid var(--border);
+  }
+  .matrix-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+  .matrix-col {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+  }
+  .matrix-col.highlight {
+    border-color: var(--black);
+  }
+  .matrix-tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .matrix-col.highlight .matrix-tag {
+    color: var(--accent);
+  }
+  .matrix-col h3 {
+    font-size: 1.3rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+  }
+  .matrix-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .matrix-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+  .matrix-col.highlight .matrix-list li {
+    color: var(--ink);
+  }
+
+  /* BAND 3: FEATURED PER CLUSTER */
+  .featured-band {
+    padding: 96px 0;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+  }
+  .center-cta {
+    margin-top: 44px;
+    text-align: center;
+  }
+
+  /* BAND 4: CLOSING EDITORIAL STATEMENT */
+  .closing-band {
+    padding: 96px 0;
+    background: var(--black);
+    color: var(--white);
+    text-align: center;
+  }
+  .closing-band h2 {
+    font-size: clamp(2rem, 3.6vw, 3rem);
+    letter-spacing: -0.03em;
+    max-width: 680px;
+    margin: 0 auto 16px;
+  }
+  .closing-band p {
+    color: var(--muted-light);
+    max-width: 520px;
+    margin: 0 auto 32px;
+  }
+
+  @media (max-width: 960px) {
+    .hero-backdrop { width: 100%; }
+    .hero-backdrop img { opacity: 0.24; }
+    .matrix-grid { grid-template-columns: 1fr; gap: 24px; }
+  }
+  @media (max-width: 600px) {
+    .hero-cta-row .btn { width: 100%; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  <!-- BAND 1: HERO -->
+  <section class="hero-editorial">
+    <div class="hero-backdrop" aria-hidden="true">
+      <img
+        src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=1400&q=85"
+        alt=""
+      />
+    </div>
+
+    <div class="wrap">
+      <div class="hero-content">
+        <div class="hero-kicker">
+          <span class="dot"></span>
+          <span>2.159 Unit Laptop &bull; K-Means &amp; TOPSIS</span>
+        </div>
+        <h1>Beli Laptop Bukan Sekadar Harga, Tapi Ketepatan Kerja</h1>
+        <p>
+          LaptopKu menguji ribuan konfigurasi prosesor, kartu grafis, RAM, dan harga untuk menyusun peringkat laptop yang benar-benar sesuai beban kuliahmu.
+        </p>
+        <div class="hero-cta-row">
+          <a href="/rekomendasi/" class="btn btn-white">
+            <span>Mulai Survei Spesifikasi</span>
+            <i data-lucide="arrow-right" style="width:16px;height:16px;"></i>
+          </a>
+          <a href="/katalog/" class="btn btn-outline-dark">
+            <span>Jelajahi 2.159 Laptop</span>
+          </a>
+        </div>
+        <div class="hero-metrics">
+          <div>
+            <div class="metric-val mono">2.159</div>
+            <div class="metric-lbl">Unit Terindeks</div>
+          </div>
+          <div>
+            <div class="metric-val mono">3 Kelas</div>
+            <div class="metric-lbl">Klaster K-Means</div>
+          </div>
+          <div>
+            <div class="metric-val mono">5 Kriteria</div>
+            <div class="metric-lbl">Bobot TOPSIS</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BAND 2: COMPARISON MATRIX -->
+  <section class="matrix-band">
+    <div class="wrap reveal">
+      <div class="editorial-head">
+        <span class="kicker">Standar Pemilihan</span>
+        <h2>Beli Asal Murah vs. Perhitungan Objektif</h2>
+        <p>Mengapa membandingkan spesifikasi secara terukur jauh lebih aman daripada memilih berdasarkan harga atau merek semata.</p>
+      </div>
+
+      <div class="matrix-grid">
+        <div class="matrix-col">
+          <span class="matrix-tag">Cara Lama</span>
+          <h3>Memilih Tanpa Bobot</h3>
+          <ul class="matrix-list">
+            <li><i data-lucide="minus" style="width:16px;height:16px;flex-shrink:0;"></i><span>Terjebak spesifikasi prosesor lama di harga tinggi</span></li>
+            <li><i data-lucide="minus" style="width:16px;height:16px;flex-shrink:0;"></i><span>RAM atau kapasitas SSD tidak seimbang dengan beban aplikasi</span></li>
+            <li><i data-lucide="minus" style="width:16px;height:16px;flex-shrink:0;"></i><span>Sulit membandingkan puluhan seri antar merek sekaligus</span></li>
+            <li><i data-lucide="minus" style="width:16px;height:16px;flex-shrink:0;"></i><span>Membayar fitur grafis tinggi yang tidak terpakai</span></li>
+          </ul>
+        </div>
+
+        <div class="matrix-col highlight">
+          <span class="matrix-tag">Metode LaptopKu</span>
+          <h3>Klaster K-Means &amp; TOPSIS</h3>
+          <ul class="matrix-list">
+            <li><i data-lucide="check" style="width:16px;height:16px;color:var(--accent);flex-shrink:0;"></i><span>Pengelompokan otomatis ke kelas Ringan, Menengah, dan Berat</span></li>
+            <li><i data-lucide="check" style="width:16px;height:16px;color:var(--accent);flex-shrink:0;"></i><span>Skor benchmark CPU dan GPU terukur pada 2.159 unit</span></li>
+            <li><i data-lucide="check" style="width:16px;height:16px;color:var(--accent);flex-shrink:0;"></i><span>Perankingan jarak solusi ideal sesuai batas anggaranmu</span></li>
+            <li><i data-lucide="check" style="width:16px;height:16px;color:var(--accent);flex-shrink:0;"></i><span>Bobot prioritas fleksibel: Seimbang, Performa, atau Hemat</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BAND 3: PILIHAN UTAMA PER KLASTER -->
+  <section class="featured-band">
+    <div class="wrap reveal">
+      <div class="editorial-head">
+        <span class="kicker">Rekomendasi Dasar</span>
+        <h2>Peringkat Pertama per Kelas</h2>
+        <p>Klik kartu laptop di bawah untuk memeriksa seluruh rincian komponen dan skor benchmark.</p>
+      </div>
+
+      <div id="bestClusterGrid" class="grid-3"></div>
+
+      <div class="center-cta">
+        <a href="/katalog/" class="btn btn-outline">
+          <span>Lihat Seluruh 2.159 Laptop</span>
+          <i data-lucide="arrow-right" style="width:15px;height:15px;"></i>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- BAND 4: CLOSING CTA -->
+  <section class="closing-band">
+    <div class="wrap reveal">
+      <span class="kicker" style="color:var(--muted-light);">Mulai Sekarang</span>
+      <h2>Temukan Laptop yang Tepat untuk Kuliahmu</h2>
+      <p>Masukkan batas anggaran dan profil aktivitasmu, lalu biarkan mesin TOPSIS mengurutkan kandidat terbaik.</p>
+      <a href="/rekomendasi/" class="btn btn-accent">
+        <span>Hitung Rekomendasi Laptop</span>
+        <i data-lucide="arrow-up-right" style="width:16px;height:16px;"></i>
+      </a>
+    </div>
+  </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  async function loadBestPerCluster() {
+    const container = document.getElementById('bestClusterGrid');
+    const labels = [
+      { key: 'Rendah', title: 'Kelas Ringan' },
+      { key: 'Menengah', title: 'Kelas Menengah' },
+      { key: 'Tinggi', title: 'Kelas Berat' }
+    ];
+
+    try {
+      const res = await fetch('/api/best-cluster/');
+      const data = await res.json();
+      container.innerHTML = labels
+        .map(({ key, title }) => {
+          const item = data.best_per_cluster[key];
+          if (!item) return '';
+          const pct = (item.preference_value * 100).toFixed(1) + '%';
+          return renderLaptopCard(item, title, `Skor Preferensi ${pct}`);
+        })
+        .join('');
+      lucide.createIcons();
+    } catch (err) {
+      container.innerHTML = '';
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', loadBestPerCluster);
+</script>
+{% endblock %}

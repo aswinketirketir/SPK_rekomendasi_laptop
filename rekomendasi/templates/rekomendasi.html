@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+{% block title %}Cari Rekomendasi Laptop — LaptopKu{% endblock %}
+
+{% block extra_css %}
+<style>
+  .survey-page {
+    padding: 116px 0 84px;
+    background: var(--white);
+  }
+  .filter-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    margin-bottom: 44px;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 22px;
+  }
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+  }
+  .field label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.83rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .field input, .field select {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 46px;
+    padding: 0 34px 0 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    background: var(--white);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 0.9rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .field input.mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    padding-right: 14px;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--black);
+  }
+  .filter-footer {
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .btn-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .empty-state {
+    background: var(--white);
+    border: 1px dashed #d1d5db;
+    border-radius: 14px;
+    padding: 48px 24px;
+    text-align: center;
+    color: var(--muted);
+  }
+  .empty-state strong {
+    display: block;
+    color: var(--black);
+    font-size: 1rem;
+    margin-bottom: 6px;
+  }
+
+  @media (max-width: 900px) {
+    .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: minmax(0, 1fr); }
+    .btn-group, .btn-group .btn { width: 100%; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  <section class="survey-page">
+    <div class="wrap">
+      <div class="editorial-head">
+        <span class="kicker">Perankingan Multi-Kriteria</span>
+        <h1>Survei &amp; Rekomendasi</h1>
+        <p>Tentukan batas anggaran dan kebutuhan kuliahmu, lalu hitung peringkat laptop terbaik menggunakan metode TOPSIS.</p>
+      </div>
+
+      <form id="filterForm" class="filter-card">
+        <div class="form-grid">
+          <div class="field">
+            <label for="maxBudget"><i data-lucide="wallet" style="width:15px;height:15px;"></i> Anggaran Maksimal (Rp)</label>
+            <input type="text" inputmode="numeric" id="maxBudget" class="mono" value="15.000.000" placeholder="Contoh: 15.000.000" />
+          </div>
+
+          <div class="field">
+            <label for="kebutuhan"><i data-lucide="graduation-cap" style="width:15px;height:15px;"></i> Profil Kebutuhan Kuliah</label>
+            <select id="kebutuhan">
+              <option value="">Semua Kebutuhan (Semua Klaster)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="prioritas"><i data-lucide="scale" style="width:15px;height:15px;"></i> Prioritas Bobot TOPSIS</label>
+            <select id="prioritas">
+              <option value="seimbang">Seimbang (Harga 30% : Spesifikasi 70%)</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="brand"><i data-lucide="tag" style="width:15px;height:15px;"></i> Merek Laptop</label>
+            <select id="brand">
+              <option value="">Semua Merek</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="minRam"><i data-lucide="memory-stick" style="width:15px;height:15px;"></i> Minimal RAM</label>
+            <select id="minRam">
+              <option value="8">Minimal 8 GB</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="minStorage"><i data-lucide="hard-drive" style="width:15px;height:15px;"></i> Minimal Penyimpanan</label>
+            <select id="minStorage">
+              <option value="512">Minimal 512 GB</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-footer">
+          <span id="statusText" style="font-size:0.88rem;color:var(--muted);">Atur kriteria di atas, lalu tekan Hitung Peringkat TOPSIS.</span>
+          <div class="btn-group">
+            <button type="button" id="resetBtn" class="btn btn-outline">
+              <i data-lucide="rotate-ccw" style="width:15px;height:15px;"></i>
+              <span>Reset Kriteria</span>
+            </button>
+            <button type="submit" class="btn btn-accent">
+              <i data-lucide="calculator" style="width:15px;height:15px;"></i>
+              <span>Hitung Peringkat TOPSIS</span>
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <div id="recommendationArea">
+        <div class="empty-state">
+          <strong>Belum ada perhitungan rekomendasi</strong>
+          <span>Pilih anggaran, kebutuhan kuliah, dan spesifikasi minimal, lalu klik tombol <b>Hitung Peringkat TOPSIS</b>.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const budgetInput = document.getElementById('maxBudget');
+
+  function formatRibuan(angkaStr) {
+    const digits = String(angkaStr || '').replace(/\D/g, '');
+    if (!digits) return '';
+    return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
+  function getRawBudget() {
+    return budgetInput.value.replace(/\D/g, '');
+  }
+
+  budgetInput.addEventListener('input', () => {
+    budgetInput.value = formatRibuan(getRawBudget());
+  });
+
+  function renderInitialState() {
+    document.getElementById('statusText').textContent = 'Atur kriteria di atas, lalu tekan Hitung Peringkat TOPSIS.';
+    document.getElementById('recommendationArea').innerHTML = `
+      <div class="empty-state">
+        <strong>Belum ada perhitungan rekomendasi</strong>
+        <span>Pilih anggaran, kebutuhan kuliah, dan spesifikasi minimal, lalu klik tombol <b>Hitung Peringkat TOPSIS</b>.</span>
+      </div>
+    `;
+  }
+
+  async function loadFilterOptions() {
+    const res = await fetch('/api/filter-options/');
+    const data = await res.json();
+    if (data.status !== 'success') return;
+
+    const brandSel = document.getElementById('brand');
+    data.brands.forEach((b) => brandSel.insertAdjacentHTML('beforeend', `<option value="${b}">${b}</option>`));
+
+    const ramSel = document.getElementById('minRam');
+    ramSel.innerHTML = '<option value="">Semua Kapasitas RAM</option>';
+    data.ram_options.forEach((r) => {
+      ramSel.insertAdjacentHTML('beforeend', `<option value="${r}" ${r === 8 ? 'selected' : ''}>Minimal ${r} GB</option>`);
+    });
+
+    const storageSel = document.getElementById('minStorage');
+    storageSel.innerHTML = '<option value="">Semua Kapasitas Storage</option>';
+    data.storage_options.forEach((s) => {
+      const labelStorage = s >= 1024 ? `Minimal ${s / 1024} TB (${s} GB)` : `Minimal ${s} GB`;
+      storageSel.insertAdjacentHTML('beforeend', `<option value="${s}" ${s === 512 ? 'selected' : ''}>${labelStorage}</option>`);
+    });
+
+    const kebSel = document.getElementById('kebutuhan');
+    data.kebutuhan_options.forEach((k) => {
+      kebSel.insertAdjacentHTML('beforeend', `<option value="${k.kode_kebutuhan}">${k.nama_aktivitas} (Klaster ${k.target_cluster_label})</option>`);
+    });
+
+    const prioSel = document.getElementById('prioritas');
+    prioSel.innerHTML = '';
+    data.prioritas_options.forEach((p) => {
+      prioSel.insertAdjacentHTML('beforeend', `<option value="${p.kode}">${p.label}</option>`);
+    });
+  }
+
+  async function fetchRecommendations() {
+    const area = document.getElementById('recommendationArea');
+    const statusText = document.getElementById('statusText');
+
+    const params = new URLSearchParams({
+      max_budget: getRawBudget(),
+      kebutuhan: document.getElementById('kebutuhan').value || '',
+      min_ram: document.getElementById('minRam').value || '',
+      min_storage: document.getElementById('minStorage').value || '',
+      brand: document.getElementById('brand').value || '',
+      prioritas: document.getElementById('prioritas').value || 'seimbang',
+      limit: '12'
+    });
+
+    statusText.textContent = 'Menghitung skor TOPSIS...';
+    const res = await fetch(`/api/rekomendasi/?${params.toString()}`);
+    const data = await res.json();
+
+    statusText.textContent = `Ditemukan ${data.total_kandidat_ditemukan} kandidat laptop yang sesuai (menampilkan ${data.jumlah_ditampilkan} terbaik).`;
+
+    if (!data.rekomendasi || data.rekomendasi.length === 0) {
+      area.innerHTML = `
+        <div class="empty-state">
+          <strong>Tidak ada laptop yang sesuai kriteria tersebut</strong>
+          <span>Coba naikkan batas anggaran maksimal atau turunkan syarat minimal RAM dan penyimpanan.</span>
+        </div>
+      `;
+      return;
+    }
+
+    const cardsHtml = data.rekomendasi
+      .map((item) => {
+        const pct = (item.dynamic_score * 100).toFixed(1) + '%';
+        return renderLaptopCard(item, `Peringkat #${item.dynamic_rank}`, `Kecocokan ${pct}`);
+      })
+      .join('');
+
+    area.innerHTML = `<div class="grid-4">${cardsHtml}</div>`;
+    lucide.createIcons();
+  }
+
+  document.getElementById('filterForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    fetchRecommendations();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    budgetInput.value = '15.000.000';
+    document.getElementById('kebutuhan').value = '';
+    document.getElementById('brand').value = '';
+    document.getElementById('minRam').value = '8';
+    document.getElementById('minStorage').value = '512';
+    document.getElementById('prioritas').value = 'seimbang';
+    renderInitialState();
+  });
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    await loadFilterOptions();
+  });
+</script>
+{% endblock %}

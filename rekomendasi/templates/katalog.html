@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Katalog 2.159 Laptop — LaptopKu{% endblock %}
+
+{% block extra_css %}
+<style>
+  .catalog-page {
+    padding: 116px 0 84px;
+    background: var(--white);
+  }
+  /* Minimalist Text Tabs (Matches reference image) */
+  .category-tabs {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 28px;
+    margin-bottom: 28px;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 6px 2px;
+    position: relative;
+    transition: color 0.15s ease;
+  }
+  .tab-btn:hover { color: var(--black); }
+  .tab-btn.active {
+    color: var(--black);
+    font-weight: 700;
+  }
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -2px;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  .search-strip {
+    max-width: 680px;
+    margin: 0 auto 36px;
+    display: grid;
+    grid-template-columns: 1fr 180px auto;
+    gap: 10px;
+  }
+  .clean-input {
+    min-height: 44px;
+    padding: 0 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 0.88rem;
+    width: 100%;
+    min-width: 0;
+  }
+  .clean-input:focus {
+    background: var(--white);
+    border-color: var(--black);
+  }
+
+  .catalog-status {
+    text-align: center;
+    font-size: 0.84rem;
+    color: var(--muted);
+    margin-bottom: 28px;
+  }
+  .pagination-bar {
+    margin-top: 48px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+  }
+
+  @media (max-width: 640px) {
+    .search-strip { grid-template-columns: 1fr; }
+    .category-tabs { gap: 18px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  <section class="catalog-page">
+    <div class="wrap">
+      <div class="editorial-head">
+        <span class="kicker">Dataset Terindeks</span>
+        <h1>Katalog Laptop</h1>
+        <p>Pilih kelas kebutuhan di bawah atau klik kartu laptop mana saja untuk memeriksa detail spesifikasi lengkap.</p>
+      </div>
+
+      <!-- Minimalist Text Tabs -->
+      <div class="category-tabs" role="tablist" aria-label="Filter Kelas Laptop">
+        <button type="button" class="tab-btn active" data-cluster="">Semua Laptop</button>
+        <button type="button" class="tab-btn" data-cluster="Rendah">Kelas Ringan</button>
+        <button type="button" class="tab-btn" data-cluster="Menengah">Kelas Menengah</button>
+        <button type="button" class="tab-btn" data-cluster="Tinggi">Kelas Berat</button>
+      </div>
+
+      <form id="catalogFilterForm" class="search-strip">
+        <input type="text" id="searchQuery" class="clean-input" placeholder="Cari seri, CPU, atau GPU (misal: ROG, RTX 4060, Ryzen 7)..." />
+        <select id="brandFilter" class="clean-input">
+          <option value="">Semua Merek</option>
+        </select>
+        <button type="submit" class="btn btn-dark">Cari</button>
+      </form>
+
+      <div id="catalogStatus" class="catalog-status">Memuat katalog...</div>
+
+      <div id="catalogGrid" class="grid-4"></div>
+
+      <div class="pagination-bar">
+        <button type="button" id="prevPageBtn" class="btn btn-outline" disabled>Sebelumnya</button>
+        <span id="pageNumberBadge" class="mono" style="font-size:0.88rem;font-weight:600;">1 / 1</span>
+        <button type="button" id="nextPageBtn" class="btn btn-outline" disabled>Berikutnya</button>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let currentPage = 1;
+  let activeCluster = '';
+
+  async function loadBrands() {
+    const res = await fetch('/api/filter-options/');
+    const data = await res.json();
+    if (data.status === 'success') {
+      const sel = document.getElementById('brandFilter');
+      data.brands.forEach((b) => {
+        sel.insertAdjacentHTML('beforeend', `<option value="${b}">${b}</option>`);
+      });
+    }
+  }
+
+  async function loadCatalog(page = 1) {
+    currentPage = page;
+    const grid = document.getElementById('catalogGrid');
+    const q = document.getElementById('searchQuery').value.trim();
+    const brand = document.getElementById('brandFilter').value;
+
+    const params = new URLSearchParams({
+      page,
+      per_page: 12,
+      q,
+      brand,
+      cluster: activeCluster
+    });
+
+    const res = await fetch(`/api/katalog/?${params.toString()}`);
+    const data = await res.json();
+
+    document.getElementById('catalogStatus').textContent =
+      `Menampilkan ${data.laptops.length} dari ${data.total_items} unit laptop (Halaman ${data.current_page} dari ${data.total_pages})`;
+    document.getElementById('pageNumberBadge').textContent = `${data.current_page} / ${data.total_pages}`;
+
+    document.getElementById('prevPageBtn').disabled = !data.has_previous;
+    document.getElementById('nextPageBtn').disabled = !data.has_next;
+
+    if (data.laptops.length === 0) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted);">Tidak ada laptop yang sesuai dengan pencarian tersebut.</div>`;
+      return;
+    }
+
+    grid.innerHTML = data.laptops
+      .map((item) => renderLaptopCard(item, `Rank #${item.ranking}`, `Klaster ${item.cluster_label}`))
+      .join('');
+    lucide.createIcons();
+  }
+
+  document.querySelectorAll('.tab-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeCluster = btn.dataset.cluster;
+      loadCatalog(1);
+    });
+  });
+
+  document.getElementById('catalogFilterForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    loadCatalog(1);
+  });
+
+  document.getElementById('brandFilter').addEventListener('change', () => loadCatalog(1));
+
+  document.getElementById('prevPageBtn').addEventListener('click', () => {
+    if (currentPage > 1) {
+      loadCatalog(currentPage - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  });
+
+  document.getElementById('nextPageBtn').addEventListener('click', () => {
+    loadCatalog(currentPage + 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  window.addEventListener('DOMContentLoaded', async () => {
+    await loadBrands();
+    await loadCatalog(1);
+  });
+</script>
+{% endblock %}

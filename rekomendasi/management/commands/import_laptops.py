@@ -1,50 +1,49 @@
+import os
 import pandas as pd
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from rekomendasi.models import Laptop
 
+
 class Command(BaseCommand):
-    help = 'Mengimpor 1.273 data laptop dari data/Dataset_SPK.xlsx ke database laptopku'
+    help = 'Import Dataset_SPK_LaptopKu_Final.xlsx hasil olahan Google Colab ke MySQL'
 
-    def handle(self, *args, **kwargs):
-        file_path = 'data/Dataset_SPK.xlsx'
-        self.stdout.write(f"Membaca {file_path}...")
+    def handle(self, *args, **options):
+        xlsx_path = os.path.join(settings.BASE_DIR, 'data', 'Dataset_SPK_LaptopKu_Final.xlsx')
+        if not os.path.exists(xlsx_path):
+            self.stderr.write(self.style.ERROR(f'File tidak ditemukan: {xlsx_path}'))
+            return
 
-        df = pd.read_excel(file_path, sheet_name='Sheet1')
+        self.stdout.write(f'Membaca {xlsx_path}...')
+        df = pd.read_excel(xlsx_path)
+
         Laptop.objects.all().delete()
-
-        laptop_objects = [
+        records = [
             Laptop(
-                brand=row['Brand'],
-                model_name=row['Model'],
-                category=row['Category'],
-                screen_size=float(row['Screen_Size']),
-                screen=row['Screen'],
-                cpu=row['CPU'],
-                ram_gb=int(row['RAM_GB']),
-                storage_original=row['Storage_Original'],
-                gpu=row['GPU'],
-                os=row['OS'],
-                weight_kg=float(row['Weight_KG']),
-                price_eur=float(row['Price_EUR']),
-                price_idr=float(row['Price_IDR']),
-                storage_gb=int(row['Storage_GB']),
-                storage_type=row['Storage_Type'],
-                cpu_brand=row['CPU_Brand'],
-                cpu_family=row['CPU_Family'],
-                gpu_brand=row['GPU_Brand'],
-                cpu_key=row['CPU_key'],
-                gpu_key=row['GPU_key'],
-                cpu_score=float(row['CPU_Score']),
-                gpu_score=float(row['GPU_Score']),
-                cluster=int(row['Cluster']),
-                cluster_label=row['Cluster_Label'],
-                d_plus=float(row['D+']),
-                d_minus=float(row['D-']),
-                preference_value=float(row['Preference_Value']),
-                ranking=int(row['Ranking']),
+                full_name=str(row['full_name']).strip(),
+                status=str(row['status']).strip(),
+                brand=str(row['brand']).strip(),
+                model_name=str(row['model_name']).strip(),
+                category=str(row['category']).strip(),
+                screen_size=float(row['screen_size']),
+                touchscreen=str(row['touchscreen']).strip(),
+                cpu=str(row['cpu']).strip(),
+                ram_gb=int(row['ram_gb']),
+                storage_gb=int(row['storage_gb']),
+                storage_type=str(row['storage_type']).strip(),
+                gpu=str(row['gpu']).strip(),
+                price_idr=float(row['price_idr']),
+                cpu_score=float(row['cpu_score']),
+                gpu_score=float(row['gpu_score']),
+                cluster_id=int(row['cluster_id']),
+                cluster_label=str(row['cluster_label']).strip(),
+                preference_value=float(row['preference_value']),
+                ranking=int(row['ranking']),
             )
             for _, row in df.iterrows()
         ]
+        Laptop.objects.bulk_create(records, batch_size=500)
 
-        Laptop.objects.bulk_create(laptop_objects, batch_size=500)
-        self.stdout.write(self.style.SUCCESS(f"Berhasil mengimpor {len(laptop_objects)} data laptop ke database laptopku!"))
+        self.stdout.write(self.style.SUCCESS(
+            f'Berhasil mengimpor {len(records)} unit laptop ke tabel rekomendasi_laptop!'
+        ))
