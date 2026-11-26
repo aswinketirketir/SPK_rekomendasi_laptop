@@ -143,12 +143,6 @@
       font-size: 1rem;
       letter-spacing: -0.02em;
     }
-    .brand-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #60a5fa;
-    }
     .pill-links {
       display: flex;
       align-items: center;
@@ -510,7 +504,6 @@
   <div class="nav-shell">
     <nav class="pill-nav" aria-label="Navigasi Utama">
       <a href="/" class="brand">
-        <span class="brand-dot"></span>
         <span>LaptopKu</span>
       </a>
 
@@ -634,6 +627,7 @@
       }).format(angka || 0);
 
     window.__LAPTOP_STORE__ = {};
+    const FALLBACK_LAPTOP_IMG = 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80';
 
     function registerLaptopItem(item) {
       window.__LAPTOP_STORE__[item.id] = item;
@@ -650,9 +644,11 @@
         ? `${(item.dynamic_score * 100).toFixed(2)}% (TOPSIS Dinamis)`
         : `${(item.preference_value * 100).toFixed(2)}% (Preferensi Dasar)`;
 
+      const modalImg = item.image_url || FALLBACK_LAPTOP_IMG;
+
       document.getElementById('modalBody').innerHTML = `
         <div class="modal-hero">
-          <img src="${item.image_url || ''}" alt="${item.brand} ${item.model_name}" />
+          <img src="${modalImg}" alt="${item.brand} ${item.model_name}" onerror="this.onerror=null;this.src='${FALLBACK_LAPTOP_IMG}'" />
           <div>
             <div style="font-size:0.8rem;color:var(--muted);margin-bottom:4px;">${item.brand} &bull; ${item.category || 'Notebook'}</div>
             <div style="font-size:0.85rem;color:var(--ink);font-weight:500;margin-bottom:8px;">${item.full_name || ''}</div>
@@ -701,11 +697,12 @@
     function renderLaptopCard(item, badgeLabel, subText) {
       registerLaptopItem(item);
       const specSummary = `${item.cpu} &bull; ${item.ram_gb} GB RAM &bull; ${item.storage_gb} GB ${item.storage_type || 'SSD'} &bull; ${item.gpu}`;
+      const cardImg = item.image_url || FALLBACK_LAPTOP_IMG;
       return `
         <article class="card grid-reveal" onclick="openLaptopModal(${item.id})" tabindex="0" onkeydown="if(event.key==='Enter')openLaptopModal(${item.id})">
           <div class="card-media">
             <span class="badge-minimal">${badgeLabel}</span>
-            <img src="${item.image_url || ''}" alt="${item.brand} ${item.model_name}" loading="lazy" />
+            <img src="${cardImg}" alt="${item.brand} ${item.model_name}" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK_LAPTOP_IMG}'" />
           </div>
           <div class="card-body">
             <h3 class="card-title">${item.brand} ${item.model_name}</h3>

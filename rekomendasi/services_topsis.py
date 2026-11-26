@@ -18,12 +18,16 @@ def get_laptop_image_url(brand: str, category: str) -> str:
     b = str(brand).lower()
     c = str(category).lower()
     if 'apple' in b:
-        return 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&q=80'
+        # Apple MacBook Space Gray / Silver dengan background studio netral sejuk (laptop asli)
+        return 'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?w=800&q=80'
     if 'gaming' in c or any(k in b for k in ['msi', 'alienware', 'razer', 'gigabyte']):
+        # Laptop gaming RGB (ASUS ROG / MSI) terbuka di ruangan gelap dengan keyboard RGB cyber blue/neon
         return 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800&q=80'
     if 'ultrabook' in c or any(k in b for k in ['lg', 'dell', 'microsoft']):
-        return 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&q=80'
-    return 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=800&q=80'
+        # Ultrabook ramping (Dell XPS) terbuka dengan layar tipis dan warna cool slate
+        return 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800&q=80'
+    # Notebook modern (Dell/HP/Lenovo) terbuka menghadap depan di atas meja putih bersih
+    return 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&q=80'
 
 
 def hitung_topsis_dinamis(queryset, prioritas='seimbang', top_n=12):

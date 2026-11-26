@@ -31,8 +31,8 @@
     height: 100%;
     object-fit: cover;
     object-position: center right;
-    opacity: 0.42;
-    filter: grayscale(35%) contrast(1.08);
+    opacity: 0.5;
+    filter: contrast(1.05) brightness(0.95);
     display: block;
   }
   /* Gradasi menyatu sempurna ke hitam di sisi kiri, atas, dan bawah */
@@ -60,12 +60,6 @@
     text-transform: uppercase;
     color: var(--muted-light);
     margin-bottom: 18px;
-  }
-  .hero-kicker .dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #60a5fa;
   }
   .hero-editorial h1 {
     font-size: clamp(2.4rem, 4.5vw, 3.85rem);
@@ -206,7 +200,7 @@
   <section class="hero-editorial">
     <div class="hero-backdrop" aria-hidden="true">
       <img
-        src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=1400&q=85"
+        src="https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=1600&q=85"
         alt=""
       />
     </div>
@@ -214,7 +208,6 @@
     <div class="wrap">
       <div class="hero-content">
         <div class="hero-kicker">
-          <span class="dot"></span>
           <span>2.159 Unit Laptop &bull; K-Means &amp; TOPSIS</span>
         </div>
         <h1>Beli Laptop Bukan Sekadar Harga, Tapi Ketepatan Kerja</h1>
